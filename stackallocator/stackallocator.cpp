@@ -253,6 +253,10 @@ public:
         return node_alloc;
     }
 
+    basenode_alloc_type get_base_allocator() const {
+        return basenode_alloc;
+    }
+
     void push_back(const T &value) {
         Node *add = node_alloc.allocate(1);
         try {
@@ -537,6 +541,4 @@ public:
         insert_node(it, add);
     }
 
-
 };
-
