@@ -5,48 +5,48 @@ template<typename T>
 class Deque {
 public:
 
-    Deque() : left ((block_number - 1) / 2, 0, this),
-              right ((block_number - 1) / 2, 0, this), buffer(block_number) {
-        for (size_t i = 0; i < block_number; ++i) {
-            buffer[i] = reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]);
+    Deque() : _left ((_block_number - 1) / 2, 0, this),
+              _right ((_block_number - 1) / 2, 0, this), _buffer(_block_number) {
+        for (size_t i = 0; i < _block_number; ++i) {
+            _buffer[i] = reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]);
         }
     }
 
-    explicit Deque(int length) : block_number((length / block_size + 1) * 2),
-                        left((block_number - 1) / 2, 0, this),
-                        right((block_number - 1) / 2, 0, this),
-                        buffer(block_number) {
-        for (size_t i = 0; i < block_number; ++i) {
-            buffer[i] = reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]);
+    explicit Deque(int length) : _block_number((length / _block_size + 1) * 2),
+                                 _left((_block_number - 1) / 2, 0, this),
+                                 _right((_block_number - 1) / 2, 0, this),
+                                 _buffer(_block_number) {
+        for (size_t i = 0; i < _block_number; ++i) {
+            _buffer[i] = reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]);
         }
-        right += length;
+        _right += length;
     }
 
-    Deque(int length, const T& value) : block_number((length / block_size + 1) * 2),
-                                        left((block_number - 1) / 2, 0, this),
-                                        right((block_number - 1) / 2, 0, this),
-                                        buffer(block_number) {
-        for (size_t i = 0; i < block_number; ++i) {
-            buffer[i] = reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]);
+    Deque(int length, const T& value) : _block_number((length / _block_size + 1) * 2),
+                                        _left((_block_number - 1) / 2, 0, this),
+                                        _right((_block_number - 1) / 2, 0, this),
+                                        _buffer(_block_number) {
+        for (size_t i = 0; i < _block_number; ++i) {
+            _buffer[i] = reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]);
         }
         for (size_t i = 0; i < static_cast<size_t>(length); ++i) {
-            auto current = right;
-            new(buffer[current.block] + current.pos) T(value);
-            ++right;
+            auto current = _right;
+            new(_buffer[current._block] + current._pos) T(value);
+            ++_right;
         }
     }
 
-    Deque(const Deque& other) : block_number(other.size()),
-                                left((block_number - 1) / 2, 0, this),
-                                right((block_number - 1) / 2, 0, this),
-                                buffer(block_number) {
-        for (size_t i = 0; i < block_number; ++i) {
-            buffer[i] = reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]);
+    Deque(const Deque& other) : _block_number(other.size()),
+                                _left((_block_number - 1) / 2, 0, this),
+                                _right((_block_number - 1) / 2, 0, this),
+                                _buffer(_block_number) {
+        for (size_t i = 0; i < _block_number; ++i) {
+            _buffer[i] = reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]);
         }
         for (size_t i = 0; i < static_cast<size_t>(other.size()); ++i) {
-            auto current = right;
-            new(buffer[current.block] + current.pos) T(other.operator[](i));
-            ++right;
+            auto current = _right;
+            new(_buffer[current._block] + current._pos) T(other.operator[](i));
+            ++_right;
         }
     }
 
@@ -56,29 +56,29 @@ public:
     }
 
     void swap(Deque& other) {
-        std::swap(block_number, other.block_number);
-        std::swap(left, other.left);
-        std::swap(right, other.right);
-        std::swap(buffer, other.buffer);
+        std::swap(_block_number, other._block_number);
+        std::swap(_left, other._left);
+        std::swap(_right, other._right);
+        std::swap(_buffer, other._buffer);
     }
 
     size_t size() const {
-        if (right.block == left.block) {
-            return right.pos - left.pos;
+        if (_right._block == _left._block) {
+            return _right._pos - _left._pos;
         }
-        return (right.block - left.block - 1) * block_size + block_size - left.pos + right.pos;
+        return (_right._block - _left._block - 1) * _block_size + _block_size - _left._pos + _right._pos;
     }
 
     T& operator[](const size_t index) {
-        base_iterator<false> get_position = left;
+        base_iterator<false> get_position = _left;
         get_position += index;
-        return *(buffer[get_position.block] + get_position.pos);
+        return *(_buffer[get_position._block] + get_position._pos);
     }
 
     const T& operator[](const size_t index) const {
-        base_iterator<false> get_position = left;
+        base_iterator<false> get_position = _left;
         get_position += index;
-        return *(buffer[get_position.block] + get_position.pos);
+        return *(_buffer[get_position._block] + get_position._pos);
     }
 
     T& at(const size_t index) {
@@ -96,41 +96,41 @@ public:
     }
 
     void push_back(const T& value) {
-        if (right.pos == 0 && right.block == block_number) { // если блоки заполнены
-            size_t add_size = right.block - left.block + 1;
+        if (_right._pos == 0 && _right._block == _block_number) { // если блоки заполнены
+            size_t add_size = _right._block - _left._block + 1;
             for (size_t i = 0; i < add_size; ++i) {
-                buffer.insert(buffer.end(), 1, reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]));
+                _buffer.insert(_buffer.end(), 1, reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]));
             }
-            block_number += add_size;
+            _block_number += add_size;
         }
 
-        new(buffer[right.block] + right.pos) T(value);
-        ++right;
+        new(_buffer[_right._block] + _right._pos) T(value);
+        ++_right;
     }
 
     void push_front(const T& value) {
-        if (left.pos == 0 && left.block == 0) {
-            size_t add_size = right.block - left.block + 1;
+        if (_left._pos == 0 && _left._block == 0) {
+            size_t add_size = _right._block - _left._block + 1;
             for (size_t i = 0; i < add_size; ++i) {
-                buffer.insert(buffer.begin(), 1, reinterpret_cast<T*>(new uint8_t[block_size * sizeof(T)]));
+                _buffer.insert(_buffer.begin(), 1, reinterpret_cast<T*>(new uint8_t[_block_size * sizeof(T)]));
             }
-            block_number += add_size;
-            left.block += add_size;
-            right.block += add_size;
+            _block_number += add_size;
+            _left._block += add_size;
+            _right._block += add_size;
         }
 
-        --left;
-        new(buffer[left.block] + left.pos) T(value);
+        --_left;
+        new(_buffer[_left._block] + _left._pos) T(value);
     }
 
     void pop_back() {
-        --right;
-        buffer[right.block][right.pos].~T();
+        --_right;
+        _buffer[_right._block][_right._pos].~T();
     }
 
     void pop_front() {
-        buffer[left.block][left.pos].~T();
-        ++left;
+        _buffer[_left._block][_left._pos].~T();
+        ++_left;
     }
 
 
@@ -138,7 +138,7 @@ public:
     struct base_iterator {
 
         operator base_iterator<true>() const {
-            return base_iterator<true>(block, pos);
+            return base_iterator<true>(_block, _pos);
         }
 
         using difference_type = std::ptrdiff_t;
@@ -147,36 +147,36 @@ public:
         using reference = typename std::conditional<is_const, const T&, T&>::type;
         using iterator_category = std::bidirectional_iterator_tag;
 
-        base_iterator(size_t block, size_t pos) : block(block), pos(pos) {}
-        base_iterator(size_t block, size_t pos, Deque<T>* container) : block(block), pos(pos),
-                                                                        container(container) {}
-        size_t block;
-        size_t pos;
-        Deque<T>* container;
+        base_iterator(size_t block, size_t pos) : _block(block), _pos(pos) {}
+        base_iterator(size_t block, size_t pos, Deque<T>* container) : _block(block), _pos(pos),
+                                                                       _container(container) {}
+        size_t _block;
+        size_t _pos;
+        Deque<T>* _container;
 
         base_iterator& operator++() {
-            if (pos == block_size - 1) {
-                ++block;
-                pos = 0;
+            if (_pos == _block_size - 1) {
+                ++_block;
+                _pos = 0;
                 return *this;
             }
-            ++pos;
+            ++_pos;
             return *this;
         }
 
         base_iterator& operator--() {
-            if (pos == 0) {
-                --block;
-                pos = block_size - 1;
+            if (_pos == 0) {
+                --_block;
+                _pos = _block_size - 1;
                 return *this;
             }
-            --pos;
+            --_pos;
             return *this;
         }
 
         base_iterator& operator+=(const size_t delta) {
-            block = (block * block_size + pos + delta) / block_size;
-            pos = (pos + delta) % block_size;
+            _block = (_block * _block_size + _pos + delta) / _block_size;
+            _pos = (_pos + delta) % _block_size;
             return *this;
         }
         base_iterator& operator-=(const size_t delta) {
@@ -195,7 +195,7 @@ public:
         }
 
         bool operator<(const base_iterator& other) const {
-            if (block < other.block || (block == other.block && pos < other.pos)) {
+            if (_block < other._block || (_block == other._block && _pos < other._pos)) {
                 return true;
             } else {
                 return false;
@@ -211,24 +211,24 @@ public:
             return !(*this < other);
         }
         bool operator==(const base_iterator& other) const {
-            return *this <= other && *this >= other && container == other.container;
+            return *this <= other && *this >= other && _container == other._container;
         }
         bool operator!=(const base_iterator& other) const {
             return !(*this == other);
         }
 
         difference_type operator-(const base_iterator& other) const {
-            if (block == other.block) {
-                return pos - other.pos;
+            if (_block == other._block) {
+                return _pos - other._pos;
             }
-            return (block - other.block - 1) * block_size + block_size - other.pos + pos;
+            return (_block - other._block - 1) * _block_size + _block_size - other._pos + _pos;
         }
 
         reference operator*() {
-            return *((container->buffer)[block] + pos);
+            return *((_container->_buffer)[_block] + _pos);
         }
         pointer operator->() {
-            return ((container->buffer)[block] + pos);
+            return ((_container->_buffer)[_block] + _pos);
         }
 
     };
@@ -239,27 +239,27 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     iterator begin() {
-        return left;
+        return _left;
     }
 
     const_iterator begin() const {
-        return left;
+        return _left;
     }
 
     iterator end() {
-        return right;
+        return _right;
     }
 
     const_iterator end() const {
-        return right;
+        return _right;
     }
 
     const_iterator cbegin() const {
-        return left;
+        return _left;
     }
 
     const_iterator cend() const {
-        return right;
+        return _right;
     }
 
     reverse_iterator rbegin() {
@@ -310,10 +310,10 @@ public:
     }
 
 private:
-    size_t block_number = 10;
-    static const size_t block_size = 32;
-    base_iterator<false> left;
-    base_iterator<false> right;
-    std::vector<T*> buffer{block_number};
+    size_t _block_number = 10;
+    static const size_t _block_size = 32;
+    base_iterator<false> _left;
+    base_iterator<false> _right;
+    std::vector<T*> _buffer{_block_number};
 };
 
